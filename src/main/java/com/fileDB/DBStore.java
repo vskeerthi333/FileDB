@@ -60,9 +60,8 @@ public class DBStore implements DataStore {
     public void create(String key, String value, long ttl) throws DataStoreException, IOException {
         validateConstraints(key, value);
         StorageBlock block = memoryManager.allocate(Utf8.encodedLength(value) + 2);
-        deleteExpiredKeys();
         long expiresAt = System.currentTimeMillis() + ttl * 1000;
-        Index index = new Index(key, ttl, block);
+        Index index = new Index(key, expiresAt, block);
         keyToIndex.put(key, index);
         writeValue(block.getFilePointer(), value);
         expiredKeys.add(index);
@@ -79,13 +78,14 @@ public class DBStore implements DataStore {
         DSFile.writeUTF(value);
     }
 
-    private void validateConstraints(String key, String value) throws ConstrainViolationException, KeyAlreadyExistsException {
+    private void validateConstraints(String key, String value) throws DataStoreException {
         if (key.length() > DataStoreConstants.KEY_SIZE) {
             throw new ConstrainViolationException(String.format("Key Length is more than %d", DataStoreConstants.KEY_SIZE));
         }
         if (Utf8.encodedLength(value) > DataStoreConstants.VALUE_SIZE) {
             throw new ConstrainViolationException(String.format("Value is more than %d KB", DataStoreConstants.VALUE_SIZE));
         }
+        deleteExpiredKeys();
         if (keyToIndex.containsKey(key)) {
             throw new KeyAlreadyExistsException(String.format("Key - %s already exists", key));
         }
