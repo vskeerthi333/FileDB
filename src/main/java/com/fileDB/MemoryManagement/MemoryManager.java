@@ -9,15 +9,15 @@ import java.io.RandomAccessFile;
 public class MemoryManager {
 
     private final RandomAccessFile file;
-    private MemoryPool pool;
+    private final MemoryPool pool;
     private int USED_STORAGE = 0;
 
-    private MemoryManager(RandomAccessFile file) {
+    public MemoryManager(RandomAccessFile file) {
         this.file = file;
         pool = new MemoryPool();
     }
 
-    public MemoryManager getInstance(RandomAccessFile file) {
+    public static MemoryManager getInstance(RandomAccessFile file) {
         return new MemoryManager(file);
     }
 

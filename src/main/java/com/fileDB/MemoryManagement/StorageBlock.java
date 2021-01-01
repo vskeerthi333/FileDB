@@ -25,14 +25,4 @@ public class StorageBlock {
     public void setBlockSize(long blockSize) {
         this.blockSize = blockSize;
     }
-
-    public void extendBlock(long noOfBytes) {
-        filePointer += noOfBytes;
-        blockSize += noOfBytes;
-    }
-
-    public void shrinkBlock(long noOfBytes) {
-        filePointer -= noOfBytes;
-        blockSize -= noOfBytes;
-    }
 }

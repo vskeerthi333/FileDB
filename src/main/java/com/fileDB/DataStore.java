@@ -1,5 +1,9 @@
 package com.fileDB;
 
+import com.fileDB.Exception.*;
+
+import java.io.IOException;
+
 public interface DataStore {
 
     /**
@@ -9,7 +13,7 @@ public interface DataStore {
      * @param ttl
      * @return
      */
-    boolean create(String key, String value, int ttl);
+    void create(String key, String value, long ttl) throws IOException, DataStoreException;
 
     /**
      *
@@ -17,19 +21,19 @@ public interface DataStore {
      * @param value
      * @return
      */
-    boolean create(String key, String value);
+    void create(String key, String value) throws IOException, DataStoreException;
 
     /**
      *
      * @param key
      * @return
      */
-    boolean delete(String key);
+    void delete(String key) throws KeyNotFoundException, DataStoreException;
 
     /**
      *
      * @param key
      * @return
      */
-    String read(String key);
+    String read(String key) throws DataStoreException, IOException;
 }

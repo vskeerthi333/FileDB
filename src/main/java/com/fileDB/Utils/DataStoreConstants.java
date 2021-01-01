@@ -23,6 +23,6 @@ public class DataStoreConstants {
     /**
      * If file path is not specified it will store in current directory
      */
-    public String DEFAULT_FILE_PATH = "./DataStore";
+    public static String DEFAULT_FILE_PATH = "./DSFile";
 
 }
