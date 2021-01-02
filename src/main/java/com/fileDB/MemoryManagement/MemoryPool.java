@@ -40,8 +40,7 @@ public class MemoryPool {
 
     void addAfter(Block e, Block node) {
         assert e != null;
-        if (e.getPrev() == null) addFirst(node);
-        else if (e.getNext() == null) addLast(node);
+        if (e.getNext() == null) addLast(node);
         else {
             node.setPrev(e);
             node.setNext(e.getNext());

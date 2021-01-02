@@ -36,4 +36,10 @@ public interface DataStore {
      * @return
      */
     String read(String key) throws DataStoreException, IOException;
+
+    /**
+     *
+     * @throws IOException
+     */
+    void close() throws IOException;
 }

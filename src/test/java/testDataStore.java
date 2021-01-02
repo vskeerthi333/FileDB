@@ -5,20 +5,21 @@ import com.fileDB.Exception.DataStoreException;
 import com.fileDB.Exception.KeyAlreadyExistsException;
 import com.fileDB.Exception.KeyNotFoundException;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Random;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class testDataStore {
     private static DataStore dataStore;
 
-    @BeforeAll
-    public static void getDataStoreInstance() throws FileNotFoundException {
+    @BeforeEach
+    public void getDataStoreInstance() throws FileNotFoundException {
         dataStore = new DBStore("./testDB");
     }
     
@@ -56,15 +57,14 @@ public class testDataStore {
 
     @Test
     public void testReadKeyAfterTTL() throws IOException, DataStoreException {
-        dataStore.create("key-3", "value-3", 1);
+        dataStore.create("key-expire", "value-expire", 1);
 
-        assertThrows(KeyNotFoundException.class,
-                () -> dataStore.read("key-3"));
+        assertThrows(KeyNotFoundException.class, () -> dataStore.read("key-3"));
     }
 
     @Test
     public void testCreatingSameKeyAfterTTL() throws IOException, DataStoreException {
-        dataStore.create("key-4", "value-4", 1);
+        dataStore.create("new-key-4", "value-4", 1);
 
         try {
             Thread.sleep(1000 * 60);
@@ -72,10 +72,10 @@ public class testDataStore {
             e.printStackTrace();
         }
 
-        dataStore.create("key-4", "new-value-4");
-        //String result = dataStore.read("key-4");
+        dataStore.create("new-key-4", "new-value-4");
+        String result = dataStore.read("new-key-4");
 
-        //assertEquals("new-value-4", result);
+        assertEquals("new-value-4", result);
     }
 
     @Test

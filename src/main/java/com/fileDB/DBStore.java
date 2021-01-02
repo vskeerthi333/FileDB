@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.channels.FileLock;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -18,27 +19,29 @@ public class DBStore implements DataStore {
 
     private RandomAccessFile DSFile;
     private MemoryManager memoryManager;
+    private final FileLock lock;
     private final Map<String, Index> keyToIndex = new ConcurrentHashMap<>();
     private final SortedSet<Index> expiredKeys = Collections.synchronizedSortedSet(new TreeSet<>(new CompareExpiryOfKey()));
 
-    public DBStore(String filePath) throws FileNotFoundException {
+    public DBStore(String filePath) throws IOException {
         if (filePath == null) filePath = DataStoreConstants.DEFAULT_FILE_PATH + hashCode();
         RandomAccessFile file = new RandomAccessFile(new File(filePath), "rwd");
+        lock =  file.getChannel().lock();
         this.DSFile = file;
         this.memoryManager = MemoryManager.getInstance(file);
     }
 
-    public DBStore() throws FileNotFoundException {
+    public DBStore() throws IOException {
         this(null);
     }
 
     @Override
-    public void create(String key, String value) throws IOException, DataStoreException {
+    public synchronized void create(String key, String value) throws IOException, DataStoreException {
         create(key, value, Long.MAX_VALUE);
     }
 
     @Override
-    public void delete(String key) throws DataStoreException {
+    public synchronized void delete(String key) throws DataStoreException {
         Index index = keyToIndex.remove(key);
         if (index == null) throw new KeyNotFoundException("Key not found to delete");
         memoryManager.free(index.getStorageBlock());
@@ -46,7 +49,7 @@ public class DBStore implements DataStore {
     }
 
     @Override
-    public String read(String key) throws DataStoreException, IOException {
+    public synchronized String read(String key) throws DataStoreException, IOException {
         Index index = keyToIndex.get(key);
         if (index == null) throw new KeyNotFoundException("Key doesn't exists");
         if (index.isExpired()) {
@@ -57,14 +60,21 @@ public class DBStore implements DataStore {
     }
 
     @Override
-    public void create(String key, String value, long ttl) throws DataStoreException, IOException {
+    public synchronized void create(String key, String value, long ttl) throws DataStoreException, IOException {
         validateConstraints(key, value);
         StorageBlock block = memoryManager.allocate(Utf8.encodedLength(value) + 2);
-        long expiresAt = System.currentTimeMillis() + ttl * 1000;
+        long expiresAt = getTimeStamp(ttl);
         Index index = new Index(key, expiresAt, block);
         keyToIndex.put(key, index);
         writeValue(block.getFilePointer(), value);
         expiredKeys.add(index);
+    }
+
+    private long getTimeStamp(long ttl) {
+        if (ttl != Long.MAX_VALUE) {
+            return System.currentTimeMillis() + ttl * 1000;
+        }
+        return ttl;
     }
 
 
@@ -103,5 +113,10 @@ public class DBStore implements DataStore {
         public int compare(Index o1, Index o2) {
             return (int) (o1.expiresAt() - o2.expiresAt());
         }
+    }
+
+    @Override
+    public void close() throws IOException {
+        lock.release();
     }
 }

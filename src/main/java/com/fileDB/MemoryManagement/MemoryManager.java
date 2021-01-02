@@ -36,9 +36,11 @@ public class MemoryManager {
 
     public void free(StorageBlock block) {
         Block blockToBeDeleted = (Block) block;
+        USED_STORAGE -= blockToBeDeleted.getBlockSize();
         blockToBeDeleted.setAllocated(false);
         mergeAdjacentEmptyBlocks(blockToBeDeleted, true);
         mergeAdjacentEmptyBlocks(blockToBeDeleted, false);
+
     }
 
     private void mergeAdjacentEmptyBlocks(Block curr, boolean isPrevious) {
@@ -54,12 +56,11 @@ public class MemoryManager {
     }
 
     private void performCompaction() throws IOException {
-       Block curr = pool.getStartBlock();
-
-       while (curr != null && curr.getNext() != null) {
-           Block next = curr.getNext();
-            if (!curr.isAllocated()) {
-
+        Block curr = pool.getStartBlock();
+        while (curr != null && curr.getNext() != null) {
+            Block next = curr.getNext();
+            // Bring next forward
+            if (!curr.isAllocated() && next.isAllocated()) {
                 file.seek(next.getFilePointer());
                 String contents = file.readUTF();
                 file.seek(curr.getFilePointer());
@@ -70,8 +71,13 @@ public class MemoryManager {
                 next.setBlockSize(totalSize - curr.getBlockSize());
 
                 next.setFilePointer(curr.getFilePointer() + curr.getBlockSize());
-            }
-            curr = next;
+
+                curr.setAllocated(true);
+                next.setAllocated(false);
+                curr = next;
+            } else if (!curr.isAllocated() && !next.isAllocated()) {
+                mergeAdjacentEmptyBlocks(curr, false);
+            } else curr = curr.getNext();
         }
     }
 
