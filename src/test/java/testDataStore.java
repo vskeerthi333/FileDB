@@ -19,7 +19,7 @@ public class testDataStore {
     private static DataStore dataStore;
 
     @BeforeEach
-    public void getDataStoreInstance() throws FileNotFoundException {
+    public void getDataStoreInstance() throws IOException {
         dataStore = new DBStore("./testDB");
     }
     

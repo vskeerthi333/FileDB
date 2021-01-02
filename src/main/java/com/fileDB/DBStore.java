@@ -70,10 +70,13 @@ public class DBStore implements DataStore {
         expiredKeys.add(index);
     }
 
+    @Override
+    public void close() throws IOException {
+        lock.release();
+    }
+
     private long getTimeStamp(long ttl) {
-        if (ttl != Long.MAX_VALUE) {
-            return System.currentTimeMillis() + ttl * 1000;
-        }
+        if (ttl != Long.MAX_VALUE) return System.currentTimeMillis() + ttl * 1000;
         return ttl;
     }
 
@@ -113,10 +116,5 @@ public class DBStore implements DataStore {
         public int compare(Index o1, Index o2) {
             return (int) (o1.expiresAt() - o2.expiresAt());
         }
-    }
-
-    @Override
-    public void close() throws IOException {
-        lock.release();
     }
 }
